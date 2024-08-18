@@ -1,0 +1,31 @@
+[Unit]
+Description=Ghost blog
+After=local-fs.target
+
+[Container]
+Image=docker.io/library/ghost:5-alpine
+ContainerName=ghost-blog
+AutoUpdate=registry
+UserNS=auto
+
+# see https://ghost.org/docs/config/#configuration-options
+Environment=url=http://204.216.221.18
+Environment=database__client=sqlite3
+Environment=database__connection__filename=content/data/ghost-test.db
+#Environment=NODE_ENV=development
+PublishPort=8000:2368
+
+Volume=ghost-blog:/var/lib/ghost/content:Z
+
+HealthCmd=curl -H 'X-Forwarded-Proto: https' -If http://localhost:2368/ghost/api/admin/site || exit 1
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=5
+
+[Service]
+Restart=always
+
+[Install]
+# Start by default on boot
+WantedBy=multi-user.target default.target
+
