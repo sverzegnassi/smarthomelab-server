@@ -1,0 +1,58 @@
+---
+- name: Get or update configuration for this server
+  ansible.builtin.git:
+    repo: "{{ git_repo_url }}"
+    remote: "{{ git_repo_branch }}"
+    version: HEAD
+    dest: "{{ local_dest }}"
+  become: false       # Ensure owner of the folder is {{ ansible_user }}
+  register: git_repo
+
+- name: Get list of changes
+  block:
+    - name: Generate diff
+      command: "git diff --name-status {{ git_repo.before }} HEAD"
+      args:
+        chdir: "{{ local_dest }}"
+      register: changed_files
+
+    - name: Separate changed files into added, modified, and removed
+      set_fact:
+        added_files: "{{ changed_files.stdout_lines | select('search', '^A') | map('regex_replace', '^A\\s+', '') | list }}"
+        modified_files: "{{ changed_files.stdout_lines | select('search', '^M') | map('regex_replace', '^M\\s+', '') | list }}"
+        removed_files: "{{ changed_files.stdout_lines | select('search', '^D') | map('regex_replace', '^D\\s+', '') | list }}"
+  when: 
+    - git_repo.before is not none
+
+- name: Handle the first-time clone case where all files should be considered as added
+  block:
+    - name: List all files
+      command: "git ls-files"
+      args:
+        chdir: "{{ local_dest }}"
+      register: all_files
+
+    - name: Set all files as added_files
+      set_fact:
+        added_files: "{{ all_files.stdout_lines }}"
+        modified_files: []
+        removed_files: []
+  when:
+    - git_repo.before is none
+
+- name: Display changes
+  block:
+    - name: Display added files
+      debug:
+        msg: "Added files: {{ added_files }}"
+      when: added_files | length > 0
+
+    - name: Display modified files
+      debug:
+        msg: "Modified files: {{ modified_files }}"
+      when: modified_files | length > 0
+
+    - name: Display removed files
+      debug:
+        msg: "Removed files: {{ removed_files }}"
+      when: removed_files | length > 0

@@ -1,0 +1,96 @@
+---
+- name: Filter files by quadlets_loc
+  set_fact:
+    added_quadlets: "{{ added_files | select('search', '^' + quadlets_loc) | list }}"
+    modified_quadlets: "{{ modified_files | select('search', '^' + quadlets_loc) | list }}"
+    removed_quadlets: "{{ removed_files | select('search', '^' + quadlets_loc) | list }}"
+
+- name: Filter containers
+  set_fact:
+    added_containers: "{{ added_quadlets | select('search', '.container$') | list }}"
+    modified_containers: "{{ modified_quadlets | select('search', '.container$') | list }}"
+    removed_containers: "{{ removed_quadlets | select('search', '.container$') | list }}"
+
+- name: Handle removed quadlets 
+  block:
+    - name: Remove deprecated quadlet definitions
+      ansible.builtin.file:
+        path: "/home/{{ podman_user }}/.config/containers/systemd/{{ item | basename }}"
+        state: absent
+      with_items: "{{ removed_quadlets }}"
+    
+    - name: Stop any associated container (Removed)
+      become: yes
+      command: systemctl --user -M {{ podman_user }} stop "{{ item | basename | regex_replace('\\.container$', '') }}.service"
+      with_items: "{{ removed_containers }}"
+
+    - name: Reload deamon
+      ansible.builtin.command:
+        cmd: systemctl --user -M {{ podman_user }} daemon-reload
+      become: yes
+
+  when: removed_quadlets | length > 0
+  become: yes
+
+
+- name: Handle modified quadlets 
+  block:
+    - name: Copy modified quadlets files from host
+      copy:
+        source: "{{ local_dest }}/{{ item }}"
+        dest: "/home/{{ podman_user }}/.config/containers/systemd/{{ item | basename }}"
+        owner: "{{ podman_user }}"
+        group: "{{ podman_user }}"
+      with_items: "{{ modified_quadlets }}"
+
+    - name: Stop modified containers
+      become: yes
+      command: systemctl --user -M {{ podman_user }} stop "{{ item | basename | regex_replace('\\.container$', '') }}.service"
+      with_items: "{{ modified_containers }}"
+      when: modified_containers | length > 0
+
+    - name: Reload deamon
+      ansible.builtin.command:
+        cmd: systemctl --user -M {{ podman_user }} daemon-reload
+      become: yes
+
+    - name: Restart modified containers
+      become: yes
+      command: systemctl --user -M {{ podman_user }} start "{{ item | basename | regex_replace('\\.container$', '') }}.service"
+      with_items: "{{ modified_containers }}"
+      when: modified_containers | length > 0
+
+  when: modified_quadlets | length > 0
+  become: yes
+
+
+- name: Handle new quadlets 
+  block:
+    - name: Copy new quadlets files from host
+      copy:
+        source: "{{ local_dest }}/{{ item }}"
+        dest: "/home/{{ podman_user }}/.config/containers/systemd/{{ item | basename }}"
+        owner: "{{ podman_user }}"
+        group: "{{ podman_user }}"
+      with_items: "{{ added_quadlets }}"
+
+    - name: Reload deamon
+      ansible.builtin.command:
+        cmd: systemctl --user -M {{ podman_user }} daemon-reload
+      become: yes
+    
+    - name: Start new containers
+      command: systemctl --user -M {{ podman_user }} start "{{ item | basename | regex_replace('\\.container$', '') }}.service"
+      with_items: "{{ added_containers }}"
+      when: added_containers | length > 0
+  
+  when: added_quadlets | length > 0
+  become: yes
+
+
+- name: Podman prune
+  containers.podman.podman_prune:
+    container: true
+    container_filters:
+        until: 24h
+    image: yes
