@@ -1,0 +1,21 @@
+---
+- name: Configure Podman with a Dedicated User
+  hosts: all
+  become: yes
+
+  vars:
+    podman_user: podrunner
+
+  pre_tasks:
+    - name: Update all packages on Ubuntu/Debian
+      apt:
+        update_cache: yes
+        upgrade: dist
+        
+    - name: Install Podman
+      apt:
+        name: podman
+        state: present
+
+  roles:
+    - create_user

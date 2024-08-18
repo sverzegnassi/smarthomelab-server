@@ -1,0 +1,13 @@
+---
+- name: Disable Apport by setting 'enabled' to 0
+  lineinfile:
+    path: /etc/default/apport
+    regexp: '^enabled='
+    line: 'enabled=0'
+    create: yes
+    
+- name: Stop and disable apport service
+  systemd:
+    name: apport
+    state: stopped
+    enabled: no

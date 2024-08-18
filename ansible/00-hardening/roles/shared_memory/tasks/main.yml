@@ -1,0 +1,14 @@
+---
+- name: Secure /dev/shm by adding to fstab
+  mount:
+    path: /dev/shm
+    src: tmpfs
+    fstype: tmpfs
+    opts: defaults,nodev,nosuid,noexec
+    state: mounted
+    
+- name: Ensure /dev/shm is persistent across reboots
+  lineinfile:
+    path: /etc/fstab
+    regexp: '^(tmpfs\s+/dev/shm\s+tmpfs\s+).*'
+    line: 'tmpfs /dev/shm tmpfs defaults,nodev,nosuid,noexec 0 0'

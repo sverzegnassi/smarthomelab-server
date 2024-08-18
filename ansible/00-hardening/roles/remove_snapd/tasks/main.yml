@@ -1,0 +1,36 @@
+---
+- name: List installed snaps
+  command: snap list
+  register: snap_list
+  failed_when: false
+
+- name: Remove all installed snaps
+  apt:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ snap_list.stdout_lines[1:] | map('split', ' ', 1) | map('first') }}"
+  when: snap_list.stdout_lines | length > 1
+
+- name: Remove snapd package
+  apt:
+    name: snapd
+    state: absent
+
+- name: Remove snap-related directories
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/cache/snapd
+    - /var/lib/snapd
+    # - /snap	# Only contains symlinks and mounts
+    - /var/snap
+    # - /home/{{ ansible_user | default(ansible_env.USER) }}/snap	# FIXME
+    
+- name: Remove snapd related configuration files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/systemd/system/snapd.service
+    - /etc/systemd/system/snapd.socket

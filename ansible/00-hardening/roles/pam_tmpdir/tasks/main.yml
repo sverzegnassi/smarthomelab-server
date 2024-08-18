@@ -1,0 +1,21 @@
+---
+- name: Install libpam-tmpdir package
+  apt:
+    name: libpam-tmpdir
+    state: present
+    update_cache: yes
+
+- name: Ensure PAM configuration for libpam-tmpdir is present
+  lineinfile:
+    path: /etc/pam.d/common-session
+    line: 'session optional pam_tmpdir.so'
+    state: present
+    create: yes
+  register: pam_config
+
+- name: Restart the system to apply PAM changes
+  reboot:
+    msg: "Rebooting to apply PAM configuration changes for libpam-tmpdir"
+    reboot_timeout: 600
+    test_command: whoami
+  when: pam_config.changed

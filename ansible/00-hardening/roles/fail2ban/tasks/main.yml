@@ -1,0 +1,30 @@
+---
+- name: Install Fail2Ban package on Debian/Ubuntu
+  apt:
+    name: fail2ban
+    state: present
+
+- name: Ensure Fail2Ban is enabled and started
+  systemd:
+    name: fail2ban
+    state: started
+    enabled: yes
+        
+- name: Configure Fail2Ban for SSH
+  copy:
+    dest: /etc/fail2ban/jail.d/custom-sshd.conf
+    content: |
+      [sshd]
+      enabled = true
+      port    = ssh
+      logpath = %(sshd_log)s
+      bantime = 10m
+      findtime = 10m
+      maxretry = 5
+  register: fail2ban_config
+
+- name: Restart Fail2Ban to apply configuration
+  systemd:
+    name: fail2ban
+    state: restarted  
+  when: fail2ban_config.changed

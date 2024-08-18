@@ -1,0 +1,26 @@
+---
+- name: Check if running on Oracle Cloud Infrastructure
+  ansible.builtin.command: "curl -s http://169.254.169.254/opc/v1/instance/"
+  register: oci_check
+  changed_when: false
+  failed_when: false
+
+- name: Ensure iptables rules for HTTP and HTTPS (Oracle Cloud)
+  block:
+    - name: Ensure iptables rules for ports 80 and 443 are present
+      ansible.builtin.blockinfile:
+        path: /etc/iptables/rules.v4
+        insertafter: '-A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT'
+        block: |
+          -A INPUT -p tcp -m state --state NEW -m multiport --dports 80,443 -j ACCEPT
+        marker: "# {mark} ANSIBLE MANAGED BLOCK"
+      become: yes
+
+    - name: Apply iptables rules
+      shell: /sbin/iptables-restore < /etc/iptables/rules.v4
+      become: yes
+
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_release is defined
+    - oci_check.rc == 0

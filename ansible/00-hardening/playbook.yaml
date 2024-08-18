@@ -1,0 +1,39 @@
+---
+- name: Server first configuration
+  hosts: all
+  become: yes
+  
+  pre_tasks:
+    - name: Update all packages on Ubuntu/Debian
+      apt:
+        update_cache: yes
+        upgrade: dist
+        
+  roles:
+    - unattended_upgrades
+    - disable_apport
+    - shared_memory
+    - kernel_hardening
+    - ssh_hardening
+    - fail2ban
+    - unsafe_services
+    - pam_tmpdir
+    - remove_snapd
+  
+  tasks:
+    - name: Lock the root user account
+      user:
+        name: root
+        password_lock: yes
+    
+    - name: Install apt-listchanges package
+      apt:
+        name: apt-listchanges
+        state: present
+        update_cache: yes
+
+    # Install lynis for audit
+    - name: Install Lynis on Debian/Ubuntu
+      apt:
+        name: lynis
+        state: present

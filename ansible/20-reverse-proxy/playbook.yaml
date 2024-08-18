@@ -1,0 +1,53 @@
+---
+- name: Install and configure Caddy
+  hosts: all
+  become: yes
+
+  roles:
+    - oci_ubuntu_firewall_allow_https
+
+  tasks:
+    - name: Add Caddy repository
+      block:
+        - name: Get Caddy repo key
+          apt_key:
+            url: "https://dl.cloudsmith.io/public/caddy/stable/gpg.key"
+            state: present
+
+        - name: Ensure Caddy repo is present
+          apt_repository:
+            repo: "deb https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main"
+            state: present
+            filename: caddy-stable
+
+        - name: Ensure Caddy src repo is present
+          apt_repository:
+            repo: "deb-src https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main"
+            state: present
+            filename: caddy-stable
+
+    - name: Install Caddy
+      apt:
+        name: caddy
+        state: present
+        update_cache: yes
+
+    - name: Create folder for Caddy sub-configuration files
+      file:
+        path: "/home/{{ ansible_user }}/caddy"
+        state: directory
+  
+    - name: Configure Caddy
+      copy:
+         dest: /etc/caddy/Caddyfile
+         content: |
+           import /etc/caddy/caddy.d/*.conf
+           import /home/{{ ansible_user }}/caddy/*.conf
+      register: caddy_config
+
+    - name: Reload caddy config
+      systemd_service:
+        name: caddy.service
+        state: restarted
+        enabled: yes
+      when: caddy_config.changed

@@ -1,0 +1,48 @@
+---
+- name: Disable and stop telnet.socket service (if exists)
+  systemd:
+    name: telnet.socket
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+
+- name: Disable and stop rsh.socket service (if exists)
+  systemd:
+    name: rsh.socket
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+
+- name: Disable and stop rlogin.socket service (if exists)
+  systemd:
+    name: rlogin.socket
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+
+- name: Disable and stop rexec.socket service (if exists)
+  systemd:
+    name: rexec.socket
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+  
+- name: Remove telnet package
+  apt:
+    name: telnet
+    state: absent
+
+- name: Remove rsh package
+  apt:
+    name: rsh-client
+    state: absent
+
+- name: Remove rlogin package
+  apt:
+    name: rsh-client
+    state: absent
+
+- name: Remove rexec package
+  apt:
+    name: rsh-client
+    state: absent
