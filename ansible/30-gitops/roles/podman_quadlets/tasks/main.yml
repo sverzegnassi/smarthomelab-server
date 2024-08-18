@@ -1,9 +1,9 @@
 ---
-- name: Filter files by quadlets_loc
+- name: Filter files by quadlets_src_loc
   set_fact:
-    added_quadlets: "{{ added_files | select('search', '^' + quadlets_loc) | list }}"
-    modified_quadlets: "{{ modified_files | select('search', '^' + quadlets_loc) | list }}"
-    removed_quadlets: "{{ removed_files | select('search', '^' + quadlets_loc) | list }}"
+    added_quadlets: "{{ added_files | select('search', '^' + quadlets_src_loc) | list }}"
+    modified_quadlets: "{{ modified_files | select('search', '^' + quadlets_src_loc) | list }}"
+    removed_quadlets: "{{ removed_files | select('search', '^' + quadlets_src_loc) | list }}"
 
 - name: Filter containers
   set_fact:
@@ -15,7 +15,7 @@
   block:
     - name: Remove deprecated quadlet definitions
       ansible.builtin.file:
-        path: "/home/{{ podman_user }}/.config/containers/systemd/{{ item | basename }}"
+        path: "{{ quadlets_dest_loc }}/{{ item | basename }}"
         state: absent
       with_items: "{{ removed_quadlets }}"
     
@@ -38,7 +38,8 @@
     - name: Copy modified quadlets files from host
       copy:
         src: "{{ local_dest }}/{{ item }}"
-        dest: "/home/{{ podman_user }}/.config/containers/systemd/{{ item | basename }}"
+        remote_src: true
+        dest: "{{ quadlets_dest_loc }}/{{ item | basename }}"
         owner: "{{ podman_user }}"
         group: "{{ podman_user }}"
       with_items: "{{ modified_quadlets }}"
@@ -69,7 +70,8 @@
     - name: Copy new quadlets files from host
       copy:
         src: "{{ local_dest }}/{{ item }}"
-        dest: "/home/{{ podman_user }}/.config/containers/systemd/{{ item | basename }}"
+        remote_src: true
+        dest: "{{ quadlets_dest_loc }}/{{ item | basename }}"
         owner: "{{ podman_user }}"
         group: "{{ podman_user }}"
       with_items: "{{ added_quadlets }}"

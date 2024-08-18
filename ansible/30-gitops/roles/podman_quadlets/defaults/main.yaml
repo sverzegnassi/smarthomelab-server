@@ -1,4 +1,5 @@
 ---
 
 podman_user: podrunner
-quadlets_loc: "quadlets/"
+quadlets_src_loc: "quadlets/"
+quadlets_dest_loc: "/home/{{ podman_user }}/.config/containers/systemd"
