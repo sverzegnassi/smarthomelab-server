@@ -30,7 +30,7 @@
     # - systemd_services
     # - systemd_timers
     - podman_quadlets
-    # - caddy_config
+    - caddy_config
     # - webhook
 
 # TODO: Save log somewhere

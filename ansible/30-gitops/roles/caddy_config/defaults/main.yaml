@@ -1,0 +1,4 @@
+---
+
+caddy_src_loc: "caddy/"
+caddy_dest_loc: "/home/{{ caddy_user }}/caddy"

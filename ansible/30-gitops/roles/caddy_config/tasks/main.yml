@@ -1,0 +1,32 @@
+---
+- name: Filter files by caddy_src_loc
+  set_fact:
+    added_caddy_files: "{{ added_files | select('search', '^' + caddy_src_loc) | list }}"
+    modified_caddy_files: "{{ modified_files | select('search', '^' + caddy_src_loc) | list }}"
+    removed_caddy_files: "{{ removed_files | select('search', '^' + caddy_src_loc) | list }}"
+
+- name: Remove old caddy configuration files
+  ansible.builtin.file:
+    path: "{{ caddy_dest_loc }}/{{ item | basename }}"
+    state: absent
+  with_items: "{{ removed_caddy_files }}"
+  when: removed_caddy_files | length > 0
+  become: yes
+  register: caddy_remove_conf
+
+- name: Copy modified / added caddy configuration files
+  copy:
+    src: "{{ local_dest }}/{{ item }}"
+    remote_src: true
+    dest: "{{ caddy_dest_loc }}/{{ item | basename }}"
+  become: yes
+  with_items: "{{ modified_caddy_files + added_caddy_files }}"
+  when: (modified_caddy_files | length > 0) or (added_caddy_files | length > 0)
+  register: caddy_copy_conf
+
+- name: Reload caddy config
+  ansible.builtin.systemd:
+    name: caddy.service
+    state: restarted
+    enabled: yes
+  when: caddy_remove_conf.changed or caddy_copy_conf.changed
