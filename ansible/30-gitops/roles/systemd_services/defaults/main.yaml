@@ -1,0 +1,3 @@
+---
+services_src_loc: "services/"
+system_services_dest_loc: "/etc/systemd/system"

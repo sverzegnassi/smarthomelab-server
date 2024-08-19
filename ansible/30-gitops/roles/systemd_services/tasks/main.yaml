@@ -1,0 +1,54 @@
+---
+- name: Filter files by services_src_loc
+  set_fact:
+    added_services: "{{ added_files | select('search', '^' + services_src_loc) | list }}"
+    modified_services: "{{ modified_files | select('search', '^' + services_src_loc) | list }}"
+    removed_services: "{{ removed_files | select('search', '^' + services_src_loc) | list }}"
+
+- name: Remove old services
+  block:
+    - name: Stop and disable old services
+      systemd:
+        name: "{{ item | basename | regex_replace('\\.service$', '') }}"
+        enabled: no
+        state: stopeed
+      with_items: "{{ removed_services }}"
+
+    - name: Delete old service files
+      ansible.builtin.file:
+        path: "{{ system_services_dest_loc }}/{{ item | basename }}"
+        state: absent
+      with_items: "{{ removed_services }}"
+
+    - name: Reload Systemd daemon
+      command: systemctl daemon-reload    
+
+  become: yes
+  when: removed_services | length > 0
+
+
+- name: New / Updated services
+  block:
+    - name: Copy modified / added caddy configuration files
+      copy:
+        src: "{{ local_dest }}/{{ item }}"
+        remote_src: true
+        dest: "{{ system_services_dest_loc }}/{{ item | basename }}"
+      with_items: "{{ modified_services + added_services }}"
+
+    - name: Reload Systemd daemon
+      command: systemctl daemon-reload
+
+    - name: Enable and/or restart services
+      systemd:
+        name: "{{ item | basename | regex_replace('\\.service$', '') }}"
+        enabled: yes
+        state: restarted
+      with_items: "{{ modified_services + added_services }}"
+
+  become: yes
+  when:
+    - (modified_services | length > 0) or
+      (added_services | length > 0)
+
+

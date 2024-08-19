@@ -2,16 +2,16 @@
 - name: GitOps
   hosts: all
   become: yes
-  
+
   vars:
     # Git repo settings
     git_repo_url: https://github.com/sverzegnassi/smarthomelab-server.git
     git_repo_branch: main
-    local_dest: '/home/{{ ansible_user }}/.gitops'
-    
+    local_dest: "/home/{{ ansible_user }}/.gitops"
+
     # Users
     podman_user: podrunner
-    caddy_user: ubuntu  
+    caddy_user: ubuntu
 
   pre_tasks:
     - name: Install required packages
@@ -19,7 +19,6 @@
         name:
           - git
           - ansible
-          - webhook
         state: present
         update_cache: yes
 
@@ -27,10 +26,9 @@
     - git_diff
     # - files_sync
     # - ansible_playbooks
-    # - systemd_services
+    - systemd_services
     # - systemd_timers
     - podman_quadlets
     - caddy_config
-    # - webhook
 
 # TODO: Save log somewhere

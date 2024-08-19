@@ -1,0 +1,13 @@
+[Unit]
+Description=GitOps Test Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -c "echo 'Hello, World!' && sleep 10"
+# The service runs the command and sleeps for 10 seconds.
+# Modify the command to perform other tests as needed.
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
