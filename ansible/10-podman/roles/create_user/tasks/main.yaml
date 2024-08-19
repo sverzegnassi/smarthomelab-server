@@ -1,42 +1,41 @@
 ---
-- name: Create "{{ podman_user }}" user
-  user:
-    name: "{{ podman_user }}"
-    create_home: yes
-    shell: /bin/bash
-    uid: 1069
-    password: '*'
+- name: Configure "{{ podman_user }}" user
   become: yes
+  block:
 
-- name: Ensure lingering is enabled for {{ podman_user }}
-  command: loginctl enable-linger "{{ podman_user }}"
-  become: yes
-
-- name: Ensure .bashrc exists
-  ansible.builtin.file:
-    path: "/home/{{ podman_user }}/.bashrc"
-    state: touch
-    owner: "{{ podman_user }}"
-    group: "{{ podman_user }}"
-  become: yes
-
-- name: Add XDG_RUNTIME_DIR to .bashrc if not present
-  ansible.builtin.lineinfile:
-    path: "/home/{{ podman_user }}/.bashrc"
-    line: 'export XDG_RUNTIME_DIR=/run/user/$(id -u)'
-    state: present
-    create: yes
-    insertafter: EOF
-    validate: 'bash -n %s'
-    owner: "{{ podman_user }}"
-    group: "{{ podman_user }}"
-  become: yes
-  
-- name: Create the Podman Quadlets directory
-  file:
-    path: "/home/{{ podman_user }}/.config/containers/systemd"
-    state: directory
-    mode: '0755'
-    owner: "{{ podman_user }}"
-    group: "{{ podman_user }}"
-  become: yes
+    - name: Create "{{ podman_user }}" user
+      user:
+        name: "{{ podman_user }}"
+        create_home: yes
+        shell: /bin/bash
+        uid: 1069
+        password: '*'
+    
+    - name: Ensure lingering is enabled for {{ podman_user }}
+      command: loginctl enable-linger "{{ podman_user }}"
+    
+    - name: Ensure .bashrc exists
+      ansible.builtin.file:
+        path: "/home/{{ podman_user }}/.bashrc"
+        state: touch
+        owner: "{{ podman_user }}"
+        group: "{{ podman_user }}"
+    
+    - name: Add XDG_RUNTIME_DIR to .bashrc if not present
+      ansible.builtin.lineinfile:
+        path: "/home/{{ podman_user }}/.bashrc"
+        line: 'export XDG_RUNTIME_DIR=/run/user/$(id -u)'
+        state: present
+        create: yes
+        insertafter: EOF
+        validate: 'bash -n %s'
+        owner: "{{ podman_user }}"
+        group: "{{ podman_user }}"
+      
+    - name: Create the Podman Quadlets directory
+      file:
+        path: "/home/{{ podman_user }}/.config/containers/systemd"
+        state: directory
+        mode: '0755'
+        owner: "{{ podman_user }}"
+        group: "{{ podman_user }}"
