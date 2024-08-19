@@ -20,14 +20,12 @@
       with_items: "{{ removed_quadlets }}"
     
     - name: Stop any associated container (Removed)
-      become: yes
       command: "systemctl --user -M {{ podman_user }}@ stop {{ item | basename | regex_replace('\\.container$', '.service') }}"
       with_items: "{{ removed_containers }}"
 
     - name: Reload deamon
       ansible.builtin.command:
         cmd: systemctl --user -M {{ podman_user }}@ daemon-reload
-      become: yes
 
   when: removed_quadlets | length > 0
   become: yes
@@ -45,7 +43,6 @@
       with_items: "{{ modified_quadlets }}"
 
     - name: Stop modified containers
-      become: yes
       command: "systemctl --user -M {{ podman_user }}@ stop {{ item | basename | regex_replace('\\.container$', '.service') }}"
       with_items: "{{ modified_containers }}"
       when: modified_containers | length > 0
@@ -53,10 +50,8 @@
     - name: Reload deamon
       ansible.builtin.command:
         cmd: systemctl --user -M {{ podman_user }}@ daemon-reload
-      become: yes
 
     - name: Restart modified containers
-      become: yes
       command: "systemctl --user -M {{ podman_user }}@ start {{ item | basename | regex_replace('\\.container$', '.service') }}"
       with_items: "{{ modified_containers }}"
       when: modified_containers | length > 0
@@ -79,7 +74,6 @@
     - name: Reload deamon
       ansible.builtin.command:
         cmd: "systemctl --user -M {{ podman_user }}@ daemon-reload"
-      become: yes
     
     - name: Start new containers
       command: "systemctl --user -M {{ podman_user }}@ start {{ item | basename | regex_replace('\\.container$', '.service') }}"
