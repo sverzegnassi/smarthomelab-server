@@ -18,14 +18,9 @@
 
     - name: Separate changed files into added, modified, and removed
       set_fact:
-        added_files: >
-          {{ (changed_files.stdout_lines | select('search', '^A') | map('regex_replace', '^A\\t', '') | list) +
-              (changed_files.stdout_lines | select('search', '^R') | map('regex_replace', '^R\\d+\\t\\S+\\t', '') | list) }}
-        modified_files: "{{ changed_files.stdout_lines | select('search', '^M') | map('regex_replace', '^M\\t', '') | list }}"
-        removed_files: >
-          {{ (changed_files.stdout_lines | select('search', '^D') | map('regex_replace', '^D\\t', '') | list) +
-              (changed_files.stdout_lines | select('search', '^R') | map('regex_replace', '^R\\d+\\t', '') | map('regex_replace', '\\t\\S+$', '') | list) }}
-
+        added_files: "{{ changed_files.stdout_lines | select('search', '^A') | map('regex_replace', '^A\\s+', '') | list }}"
+        modified_files: "{{ changed_files.stdout_lines | select('search', '^M') | map('regex_replace', '^M\\s+', '') | list }}"
+        removed_files: "{{ changed_files.stdout_lines | select('search', '^D') | map('regex_replace', '^D\\s+', '') | list }}"
   when: 
     - git_repo.before is not none
 
